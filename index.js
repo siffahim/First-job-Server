@@ -26,6 +26,7 @@ async function run() {
 
         const database = client.db('Job_Task');
         const blogCollection = database.collection('Blogs');
+        const userCollection = database.collection('Users');
 
         app.get('/blogs', async (req, res) => {
             const cursor = blogCollection.find({})
@@ -72,7 +73,6 @@ async function run() {
         app.put('/blogs/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-            console.log('hitted', id)
             const pic = req.files.img;
             const picData = pic.data.toString('base64');
             const imgBuffer = Buffer.from(picData, 'base64');
@@ -91,6 +91,36 @@ async function run() {
             res.json(result)
         })
 
+        //user
+
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await userCollection.findOne(query);
+            let isAdmim = false;
+            if (result?.role === 'admin') {
+                isAdmim = true;
+            }
+            res.json({ admin: isAdmim })
+        })
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await userCollection.insertOne(user)
+            res.json(result)
+        })
+
+        app.put('/users', async (req, res) => {
+            const user = req.body;
+            const filter = { email: user.email }
+            const updateDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            }
+            const result = await userCollection.updateOne(filter, updateDoc)
+            res.json(result)
+        })
     }
     finally {
         // await client.close()
